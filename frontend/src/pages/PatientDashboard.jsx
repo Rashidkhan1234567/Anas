@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
@@ -9,26 +9,68 @@ import {
   BrainCircuit, ShieldCheck, Mail, Phone, MapPin
 } from 'lucide-react';
 
-const appointmentHistory = [
-  { id: 1, date: 'Oct 12, 2023', doctor: 'Dr. Sarah Smith', type: 'Checkup', status: 'Completed' },
-  { id: 2, date: 'Sep 05, 2023', doctor: 'Dr. John Doe', type: 'Cardiology Consult', status: 'Completed' },
-  { id: 3, date: 'Nov 20, 2023', doctor: 'Dr. Sarah Smith', type: 'Follow up', status: 'Upcoming' },
-];
-
-const prescriptions = [
-  { id: 'RX-8921', date: 'Oct 12, 2023', doctor: 'Dr. Sarah Smith', medications: 'Amoxicillin 500mg' },
-  { id: 'RX-7432', date: 'Sep 05, 2023', doctor: 'Dr. John Doe', medications: 'Lisinopril 10mg' },
-];
-
 export function PatientDashboard() {
   const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [selectedRx, setSelectedRx] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDownloadRx = (rxId) => {
-    // Simulate download
-    console.log(`Downloading PDF for ${rxId}`);
-    alert(`Downloading Prescription ${rxId}.pdf`);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        const [profileRes, appointmentsRes, prescriptionsRes] = await Promise.all([
+          fetch('http://localhost:5000/api/patient/profile', { headers }),
+          fetch('http://localhost:5000/api/patient/appointments', { headers }),
+          fetch('http://localhost:5000/api/patient/prescriptions', { headers })
+        ]);
+
+        const profileData = await profileRes.json();
+        const appointmentsData = await appointmentsRes.json();
+        const prescriptionsData = await prescriptionsRes.json();
+
+        if (profileRes.ok) setProfile(profileData);
+        if (appointmentsRes.ok) setAppointments(appointmentsData);
+        if (prescriptionsRes.ok) setPrescriptions(prescriptionsData);
+
+      } catch (error) {
+        console.error('Error fetching patient data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleDownloadRx = async (rxId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/patient/prescriptions/${rxId}/download`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `prescription-${rxId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('Failed to download prescription');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+    }
   };
+
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading your health portal...</div>;
 
   return (
     <div className="space-y-6">
@@ -47,27 +89,32 @@ export function PatientDashboard() {
         <Card className="col-span-1 shadow-sm border border-slate-100 flex flex-col h-full">
            <div className="text-center pb-6 border-b border-slate-100">
              <div className="w-24 h-24 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-3xl font-bold mx-auto mb-4 border-4 border-white shadow-md">
-               SJ
+               {profile?.name?.split(' ').map(n => n[0]).join('') || 'PJ'}
              </div>
-             <h2 className="text-xl font-bold text-slate-800">Sarah Jenkins</h2>
-             <p className="text-sm text-slate-500 mt-1">Patient ID: #PT-1082 • Female, 34 yrs</p>
+             <h2 className="text-xl font-bold text-slate-800">{profile?.name || 'Patient'}</h2>
+             <p className="text-sm text-slate-500 mt-1">Patient ID: {profile?._id?.slice(-6).toUpperCase() || '#---'} • {profile?.gender || '---'}, {profile?.age || '--'} yrs</p>
              <div className="mt-4 flex justify-center gap-2">
-               <Badge variant="success" className="px-3 py-1 flex items-center gap-1">
-                 <ShieldCheck size={14} /> Active Insurance
+               <Badge variant={profile?.insuranceStatus === 'Active' ? 'success' : 'warning'} className="px-3 py-1 flex items-center gap-1">
+                 <ShieldCheck size={14} /> Insurance: {profile?.insuranceStatus || 'None'}
                </Badge>
              </div>
            </div>
            
            <div className="pt-6 space-y-4 flex-1">
              <div className="flex items-center gap-3 text-sm text-slate-600">
-               <Mail size={16} className="text-slate-400" /> sarah.j@example.com
+               <Mail size={16} className="text-slate-400" /> {JSON.parse(localStorage.getItem('userInfo') || '{}').email || 'No email'}
              </div>
              <div className="flex items-center gap-3 text-sm text-slate-600">
-               <Phone size={16} className="text-slate-400" /> +1 (555) 123-4567
+               <Phone size={16} className="text-slate-400" /> {profile?.contact || 'No contact'}
              </div>
              <div className="flex items-center gap-3 text-sm text-slate-600">
-               <MapPin size={16} className="text-slate-400" /> 742 Evergreen Terrace, Springfield
+               <MapPin size={16} className="text-slate-400" /> {profile?.address || '742 Evergreen Terrace, Springfield'}
              </div>
+             {profile?.bloodGroup && (
+               <div className="flex items-center gap-3 text-sm text-slate-600">
+                 <Activity size={16} className="text-slate-400" /> Blood Group: <span className="font-bold text-red-500">{profile.bloodGroup}</span>
+               </div>
+             )}
            </div>
         </Card>
 
@@ -78,14 +125,14 @@ export function PatientDashboard() {
                <BrainCircuit size={120} className="text-green-500" />
              </div>
              <div className="relative z-10 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-               <div>
-                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                   <BrainCircuit size={20} className="text-green-500" /> 
-                   Understand Your Health Better
-                 </h3>
-                 <p className="text-sm text-slate-600 mt-1 max-w-md">Our specialized AI can explain your recent diagnosis or lab results in simple, plain language.</p>
-               </div>
-               <Button 
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <BrainCircuit size={20} className="text-green-500" /> 
+                    Understand Your Health Better
+                  </h3>
+                  <p className="text-sm text-slate-600 mt-1 max-w-md">Our specialized AI can explain your recent diagnosis or lab results in simple, plain language.</p>
+                </div>
+                <Button 
                 variant="outline" 
                 className="bg-white border-green-200 text-green-700 hover:bg-green-50 whitespace-nowrap"
                 onClick={() => setAiModalOpen(true)}
@@ -102,20 +149,23 @@ export function PatientDashboard() {
                 <CalendarIcon size={18} className="text-slate-400" /> Appointment History
               </h3>
             </div>
-            <Table headers={['Date', 'Doctor', 'Visit Type', 'Status']}>
-              {appointmentHistory.map((apt) => (
-                <TableRow key={apt.id}>
-                  <TableCell className="font-medium text-slate-900">{apt.date}</TableCell>
-                  <TableCell>{apt.doctor}</TableCell>
-                  <TableCell className="text-slate-500">{apt.type}</TableCell>
-                  <TableCell>
-                    <Badge variant={apt.status === 'Completed' ? 'default' : 'info'}>
-                      {apt.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </Table>
+            {appointments.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">No appointment history found.</div>
+            ) : (
+              <Table headers={['Date', 'Doctor', 'Status']}>
+                {appointments.map((apt) => (
+                  <TableRow key={apt._id}>
+                    <TableCell className="font-medium text-slate-900">{new Date(apt.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{apt.doctorId?.name || 'General Doctor'}</TableCell>
+                    <TableCell>
+                      <Badge variant={apt.status === 'completed' ? 'success' : apt.status === 'pending' ? 'warning' : 'info'}>
+                        {apt.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </Table>
+            )}
           </Card>
 
           {/* Prescriptions Table */}
@@ -125,25 +175,28 @@ export function PatientDashboard() {
                 <FileText size={18} className="text-slate-400" /> Digital Prescriptions
               </h3>
             </div>
-            <Table headers={['Date', 'Prescribed By', 'Medications', 'Action']}>
-              {prescriptions.map((rx) => (
-                <TableRow key={rx.id}>
-                  <TableCell className="font-medium text-slate-900">{rx.date}</TableCell>
-                  <TableCell>{rx.doctor}</TableCell>
-                  <TableCell className="text-slate-500 max-w-xs truncate" title={rx.medications}>{rx.medications}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50 flex items-center gap-1.5 h-8 px-3"
-                      onClick={() => handleDownloadRx(rx.id)}
-                    >
-                      <Download size={14} /> Download PDF
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </Table>
+            {prescriptions.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">No prescriptions found.</div>
+            ) : (
+              <Table headers={['Date', 'Prescribed By', 'Action']}>
+                {prescriptions.map((rx) => (
+                  <TableRow key={rx._id}>
+                    <TableCell className="font-medium text-slate-900">{new Date(rx.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{rx.doctorId?.name || 'Doctor'}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50 flex items-center gap-1.5 h-8 px-3"
+                        onClick={() => handleDownloadRx(rx._id)}
+                      >
+                        <Download size={14} /> Download PDF
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </Table>
+            )}
           </Card>
         </div>
       </div>
@@ -160,7 +213,7 @@ export function PatientDashboard() {
                <label className="block text-sm font-medium text-slate-700 mb-1.5 pb-1">What would you like me to explain?</label>
                <select className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 mb-4">
                   <option>Recent Diagnosis: Migraine</option>
-                  <option>Lab Result: Complete Blood Count (Sept 05)</option>
+                  <option>Lab Result: Complete Blood Count</option>
                   <option>Prescription: Amoxicillin</option>
                </select>
             </div>
@@ -170,7 +223,7 @@ export function PatientDashboard() {
                  <BrainCircuit size={18} className="text-green-500" /> AI Explanation
                </h4>
                <p className="text-sm text-slate-600 leading-relaxed">
-                 Migraine is a type of headache characterized by severe throbbing pain or a pulsing sensation, usually on one side of the head. It's often accompanied by nausea, vomiting, and extreme sensitivity to light and sound. Based on your doctor's notes, the prescribed medication helps constrict blood vessels in the brain to relieve the pain.
+                 Migraine is a type of headache characterized by severe throbbing pain or a pulsing sensation, usually on one side of the head. It's often accompanied by nausea, vomiting, and extreme sensitivity to light and sound. 
                </p>
             </div>
 

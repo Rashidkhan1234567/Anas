@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
@@ -10,29 +10,57 @@ import {
   Syringe, Activity, AlertCircle, FilePlus
 } from 'lucide-react';
 
-const appointments = [
-  { id: 1, time: '09:00 AM', patient: 'Sarah Jenkins', type: 'Checkup', status: 'Waiting' },
-  { id: 2, time: '09:30 AM', patient: 'Mike Ross', type: 'Follow up', status: 'In Progress' },
-  { id: 3, time: '10:15 AM', patient: 'Emily Clark', type: 'Consultation', status: 'Scheduled' },
-  { id: 4, time: '11:00 AM', patient: 'David Chen', type: 'Lab Results', status: 'Scheduled' },
-];
-
-const patientHistory = [
-  { date: 'Oct 12, 2023', type: 'Prescription Added', doctor: 'Dr. Smith', details: 'Amoxicillin 500mg, 3x daily for 7 days', icon: FilePlus },
-  { date: 'Sep 05, 2023', type: 'Lab Test: Blood Work', doctor: 'Pathology Lab', details: 'Normal counts. Slightly elevated cholesterol.', icon: Syringe },
-  { date: 'Jul 22, 2023', type: 'Initial Consultation', doctor: 'Dr. Smith', details: 'Patient reported recurring headaches and fatigue. BP was 130/85.', icon: Activity },
-];
-
 export function DoctorDashboard() {
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [rxModalOpen, setRxModalOpen] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const doctorName = userInfo.name || 'Doctor';
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        const [appointmentsRes, profileRes] = await Promise.all([
+          fetch('http://localhost:5000/api/doctor/appointments', { headers }),
+          fetch('http://localhost:5000/api/doctor/profile', { headers })
+        ]);
+
+        const appointmentsData = await appointmentsRes.json();
+        const profileData = await profileRes.json();
+
+        if (Array.isArray(appointmentsData)) setAppointments(appointmentsData);
+        if (profileRes.ok) setProfile(profileData);
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const patientHistory = [
+    { date: 'Oct 12, 2023', type: 'Prescription Added', doctor: 'Dr. Smith', details: 'Amoxicillin 500mg, 3x daily for 7 days', icon: FilePlus },
+    { date: 'Sep 05, 2023', type: 'Lab Test: Blood Work', doctor: 'Pathology Lab', details: 'Normal counts. Slightly elevated cholesterol.', icon: Syringe },
+    { date: 'Jul 22, 2023', type: 'Initial Consultation', doctor: 'Dr. Smith', details: 'Patient reported recurring headaches and fatigue. BP was 130/85.', icon: Activity },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Welcome, Dr. Smith</h1>
-          <p className="text-sm text-slate-500 mt-1">Here's your schedule for today, {new Date().toLocaleDateString()}</p>
+          <h1 className="text-2xl font-bold text-slate-800">Welcome, Dr. {doctorName}</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {profile?.specialization || 'Healthcare Professional'} • {new Date().toLocaleDateString()}
+          </p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => setAiModalOpen(true)} className="flex items-center gap-2">
@@ -45,8 +73,8 @@ export function DoctorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-         <StatCard icon={Users} label="Daily Patients" value="18" />
-         <StatCard icon={CheckCircle2} label="Completed" value="4" />
+         <StatCard icon={Users} label="Daily Patients" value={appointments.length.toString()} />
+         <StatCard icon={CheckCircle2} label="Completed" value={appointments.filter(a => a.status === 'completed').length.toString()} />
          <StatCard icon={Clock} label="Avg Wait Time" value="12 mins" />
          <StatCard icon={FileText} label="Scripts Written" value="145" />
       </div>
@@ -58,26 +86,35 @@ export function DoctorDashboard() {
             <h3 className="text-lg font-semibold text-slate-800">Today's Schedule</h3>
           </div>
           <div className="flex-1 overflow-y-auto w-full">
-            <ul className="divide-y divide-slate-100 p-2">
-              {appointments.map((apt) => (
-                <li key={apt.id} className="p-4 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-slate-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-slate-900">{apt.time}</span>
-                    <Badge variant={
-                      apt.status === 'Waiting' ? 'warning' :
-                      apt.status === 'In Progress' ? 'success' : 'default'
-                    }>
-                      {apt.status}
-                    </Badge>
-                  </div>
-                  <div className="font-medium text-slate-800">{apt.patient}</div>
-                  <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5 border-t border-slate-100 pt-2 border-dashed">
-                     <AlertCircle size={14} className="text-slate-400" />
-                     {apt.type}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {loading ? (
+              <div className="p-8 text-center text-slate-500 text-sm">Loading schedule...</div>
+            ) : appointments.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">No appointments scheduled for today.</div>
+            ) : (
+              <ul className="divide-y divide-slate-100 p-2">
+                {appointments.map((apt) => (
+                  <li key={apt._id} className="p-4 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-slate-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-slate-900">
+                        {new Date(apt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <Badge variant={
+                        apt.status === 'pending' ? 'warning' :
+                        apt.status === 'confirmed' ? 'info' : 
+                        apt.status === 'completed' ? 'success' : 'default'
+                      }>
+                        {apt.status}
+                      </Badge>
+                    </div>
+                    <div className="font-medium text-slate-800">{apt.patientId?.name || 'Unknown Patient'}</div>
+                    <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5 border-t border-slate-100 pt-2 border-dashed">
+                       <AlertCircle size={14} className="text-slate-400" />
+                       {apt.type || 'Consultation'}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </Card>
 
@@ -86,11 +123,13 @@ export function DoctorDashboard() {
            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
             <div className="flex items-center gap-4">
                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border-2 border-white shadow-sm ring-1 ring-slate-100 text-lg">
-                 SJ
+                 {appointments[0]?.patientId?.name?.split(' ').map(n => n[0]).join('') || 'PJ'}
                </div>
                <div>
-                 <h3 className="text-lg font-bold text-slate-800">Sarah Jenkins</h3>
-                 <p className="text-xs text-slate-500">Female, 34 yrs • ID: #PT-1082</p>
+                 <h3 className="text-lg font-bold text-slate-800">{appointments[0]?.patientId?.name || 'Select a Patient'}</h3>
+                 <p className="text-xs text-slate-500">
+                   {appointments[0]?.patientId?.gender || '---'}, {appointments[0]?.patientId?.age || '--'} yrs • ID: {appointments[0]?.patientId?._id?.slice(-6).toUpperCase() || '#---'}
+                 </p>
                </div>
             </div>
           </div>
@@ -100,7 +139,7 @@ export function DoctorDashboard() {
              
              <div className="relative border-l-2 border-green-100 ml-4 space-y-8 pb-4">
                 {patientHistory.map((history, idx) => (
-                  <div key={idx} className="relative pl-8">
+                   <div key={idx} className="relative pl-8">
                     <div className="absolute -left-[17px] top-0 w-8 h-8 rounded-full bg-white border-2 border-green-500 text-green-500 flex items-center justify-center shadow-sm">
                       <history.icon size={14} />
                     </div>
@@ -142,7 +181,7 @@ export function DoctorDashboard() {
       </Modal>
 
       {/* Write Prescription Modal */}
-      <Modal isOpen={rxModalOpen} onClose={() => setRxModalOpen(false)} title="New Prescription - Sarah Jenkins" maxWidth="max-w-3xl">
+      <Modal isOpen={rxModalOpen} onClose={() => setRxModalOpen(false)} title={`New Prescription - ${appointments[0]?.patientId?.name || 'Patient'}`} maxWidth="max-w-3xl">
          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
                <Input label="Diagnosis / Chief Complaint" placeholder="Migraine with aura" />

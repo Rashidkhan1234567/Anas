@@ -16,11 +16,10 @@ export function MainLayout() {
                 Clinic<span className="text-green-500">AI</span>
               </span>
             </Link>
-            
             <nav className="hidden md:flex gap-8">
-              <a href="#features" className="text-slate-600 hover:text-green-500 transition-colors font-medium text-sm">Features</a>
-              <a href="#how-it-works" className="text-slate-600 hover:text-green-500 transition-colors font-medium text-sm">How it works</a>
-              <a href="#pricing" className="text-slate-600 hover:text-green-500 transition-colors font-medium text-sm">Pricing</a>
+              <Link to="/#features" className="text-slate-600 hover:text-green-500 transition-colors font-medium text-sm">Features</Link>
+              <Link to="/#how-it-works" className="text-slate-600 hover:text-green-500 transition-colors font-medium text-sm">How it works</Link>
+              <Link to="/#pricing" className="text-slate-600 hover:text-green-500 transition-colors font-medium text-sm">Pricing</Link>
             </nav>
 
             <div className="flex gap-4">

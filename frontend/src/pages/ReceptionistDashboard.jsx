@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
@@ -10,24 +10,129 @@ import {
   Search, MoreVertical, Edit2
 } from 'lucide-react';
 
-const schedule = [
-  { id: 1, time: '09:00 AM', doctor: 'Dr. Sarah Smith', patient: 'Sarah Jenkins', type: 'Checkup', status: 'Waiting' },
-  { id: 2, time: '09:30 AM', doctor: 'Dr. Sarah Smith', patient: 'Mike Ross', type: 'Follow up', status: 'In Progress' },
-  { id: 3, time: '10:00 AM', doctor: 'Dr. John Doe', patient: 'Tom Hardy', type: 'Consultation', status: 'Completed' },
-  { id: 4, time: '10:15 AM', doctor: 'Dr. Sarah Smith', patient: 'Emily Clark', type: 'Consultation', status: 'Scheduled' },
-  { id: 5, time: '11:00 AM', doctor: 'Dr. Mary Anne', patient: 'Will Byers', type: 'Lab Results', status: 'Cancelled' },
-];
-
 export function ReceptionistDashboard() {
   const [newPatientOpen, setNewPatientOpen] = useState(false);
   const [bookAptOpen, setBookAptOpen] = useState(false);
+  const [schedule, setSchedule] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [patientData, setPatientData] = useState({ name: '', age: '', gender: '', contact: '', email: '', password: '' });
+  const [appointmentData, setAppointmentData] = useState({ patientId: '', doctorId: '', date: '', time: '' });
+  const [doctors, setDoctors] = useState([]);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    fetchSchedule();
+    fetchDoctors();
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/receptionist/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const fetchSchedule = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/receptionist/schedule', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (Array.isArray(data)) setSchedule(data);
+    } catch (error) {
+      console.error('Error fetching schedule:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDoctors = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/admin/users?role=Doctor', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (Array.isArray(data)) setDoctors(data);
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+  };
+
+  const handleRegisterPatient = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/receptionist/patients', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(patientData),
+      });
+
+      if (response.ok) {
+        alert('Patient registered successfully!');
+        setNewPatientOpen(false);
+        setPatientData({ name: '', age: '', gender: '', contact: '', email: '', password: '' });
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
+  };
+
+  const handleBookAppointment = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      // Combine date and time
+      const dateTime = new Date(`${appointmentData.date}T${appointmentData.time}`);
+      
+      const response = await fetch('http://localhost:5000/api/receptionist/appointments', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          patientId: appointmentData.patientId,
+          doctorId: appointmentData.doctorId,
+          date: dateTime.toISOString()
+        }),
+      });
+
+      if (response.ok) {
+        alert('Appointment booked successfully!');
+        setBookAptOpen(false);
+        fetchSchedule();
+        setAppointmentData({ patientId: '', doctorId: '', date: '', time: '' });
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Booking failed');
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Front Desk Overview</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage today's appointments and clinic flow.</p>
+          <h1 className="text-2xl font-bold text-slate-800">Welcome, {profile?.name || 'Receptionist'}</h1>
+          <p className="text-sm text-slate-500 mt-1">Manage today's appointments and clinic flow. (ID: {profile?.employeeId || '---'})</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => setNewPatientOpen(true)} className="flex items-center gap-2">
@@ -46,7 +151,7 @@ export function ReceptionistDashboard() {
           </div>
           <div>
             <p className="text-green-50 text-sm font-medium opacity-90">Today's Appointments</p>
-            <h4 className="text-3xl font-bold mt-1 tracking-tight">42</h4>
+            <h4 className="text-3xl font-bold mt-1 tracking-tight">{schedule.length}</h4>
           </div>
         </Card>
         
@@ -56,7 +161,9 @@ export function ReceptionistDashboard() {
           </div>
           <div>
             <p className="text-slate-500 text-sm font-medium">In Waiting Room</p>
-            <h4 className="text-3xl font-bold mt-1 text-slate-800 tracking-tight">8</h4>
+            <h4 className="text-3xl font-bold mt-1 text-slate-800 tracking-tight">
+              {schedule.filter(s => s.status === 'pending' || s.status === 'confirmed').length}
+            </h4>
           </div>
         </Card>
 
@@ -65,8 +172,8 @@ export function ReceptionistDashboard() {
              <Phone size={24} className="text-blue-500" />
           </div>
           <div>
-            <p className="text-slate-500 text-sm font-medium">New Registrations</p>
-            <h4 className="text-3xl font-bold mt-1 text-slate-800 tracking-tight">12</h4>
+            <p className="text-slate-500 text-sm font-medium">Registered Today</p>
+            <h4 className="text-3xl font-bold mt-1 text-slate-800 tracking-tight">--</h4>
           </div>
         </Card>
       </div>
@@ -89,114 +196,115 @@ export function ReceptionistDashboard() {
           </div>
         </div>
 
-        <Table headers={['Time', 'Patient', 'Doctor', 'Visit Type', 'Status', 'Actions']}>
-          {schedule.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-semibold text-slate-900">{item.time}</TableCell>
-              <TableCell className="font-medium">{item.patient}</TableCell>
-              <TableCell className="text-slate-600">{item.doctor}</TableCell>
-              <TableCell className="text-slate-500">{item.type}</TableCell>
-              <TableCell>
-                <Badge variant={
-                  item.status === 'Waiting' ? 'warning' :
-                  item.status === 'In Progress' ? 'success' : 
-                  item.status === 'Completed' ? 'default' : 
-                  item.status === 'Cancelled' ? 'danger' : 'info'
-                }>
-                  {item.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <button className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Update Status">
-                     <Edit2 size={16} />
-                  </button>
-                  <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                     <MoreVertical size={16} />
-                  </button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </Table>
+        {loading ? (
+          <div className="p-8 text-center text-slate-500 text-sm">Loading daily schedule...</div>
+        ) : schedule.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">No appointments scheduled for today.</div>
+        ) : (
+          <Table headers={['Time', 'Patient', 'Doctor', 'Status', 'Actions']}>
+            {schedule.map((item) => (
+              <TableRow key={item._id}>
+                <TableCell className="font-semibold text-slate-900">
+                  {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </TableCell>
+                <TableCell className="font-medium">{item.patientId?.name || '---'}</TableCell>
+                <TableCell className="text-slate-600">{item.doctorId?.name || '---'}</TableCell>
+                <TableCell>
+                  <Badge variant={
+                    item.status === 'pending' ? 'warning' :
+                    item.status === 'confirmed' ? 'info' : 
+                    item.status === 'completed' ? 'success' : 
+                    item.status === 'cancelled' ? 'danger' : 'info'
+                  }>
+                    {item.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <button className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Update Status">
+                      <Edit2 size={16} />
+                    </button>
+                    <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                      <MoreVertical size={16} />
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </Table>
+        )}
       </Card>
 
       {/* Add Patient Modal */}
       <Modal isOpen={newPatientOpen} onClose={() => setNewPatientOpen(false)} title="Register New Patient" maxWidth="max-w-2xl">
-         <div className="space-y-6">
+         <form onSubmit={handleRegisterPatient} className="space-y-6">
             <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2">Personal Information</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <Input label="First Name" placeholder="John" />
-               <Input label="Last Name" placeholder="Doe" />
-               <Input label="Date of Birth" type="date" />
+               <Input label="Full Name" placeholder="John Doe" value={patientData.name} onChange={(e) => setPatientData({...patientData, name: e.target.value})} required />
+               <Input label="Age" type="number" placeholder="25" value={patientData.age} onChange={(e) => setPatientData({...patientData, age: e.target.value})} required />
                <div className="w-full">
                   <label className="block text-sm font-medium text-slate-700 mb-1.5 pb-1">Gender</label>
-                  <select className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500">
-                     <option>Select Gender</option>
-                     <option>Male</option>
-                     <option>Female</option>
-                     <option>Other</option>
+                  <select 
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+                    value={patientData.gender}
+                    onChange={(e) => setPatientData({...patientData, gender: e.target.value})}
+                    required
+                  >
+                     <option value="">Select Gender</option>
+                     <option value="Male">Male</option>
+                     <option value="Female">Female</option>
+                     <option value="Other">Other</option>
                   </select>
                </div>
+               <Input label="Phone Number" type="tel" placeholder="+1 (555) 000-0000" value={patientData.contact} onChange={(e) => setPatientData({...patientData, contact: e.target.value})} required />
             </div>
 
-            <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2 mt-4">Contact Details</h4>
+            <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2 mt-4">Account Access</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <Input label="Phone Number" type="tel" placeholder="+1 (555) 000-0000" />
-               <Input label="Email Address" type="email" placeholder="john@example.com" />
-               <div className="sm:col-span-2">
-                 <Input label="Residential Address" placeholder="123 Main St, City, ST 12345" />
-               </div>
+               <Input label="Email Address" type="email" placeholder="john@example.com" value={patientData.email} onChange={(e) => setPatientData({...patientData, email: e.target.value})} required />
+               <Input label="Password" type="password" placeholder="Temporary password" value={patientData.password} onChange={(e) => setPatientData({...patientData, password: e.target.value})} required />
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-4">
-               <Button variant="ghost" onClick={() => setNewPatientOpen(false)}>Cancel</Button>
-               <Button variant="primary">Register Patient</Button>
+               <Button variant="ghost" type="button" onClick={() => setNewPatientOpen(false)}>Cancel</Button>
+               <Button variant="primary" type="submit">Register Patient</Button>
             </div>
-         </div>
+         </form>
       </Modal>
 
       {/* Book Appointment Modal */}
       <Modal isOpen={bookAptOpen} onClose={() => setBookAptOpen(false)} title="Book Appointment">
-         <div className="space-y-4">
+         <form onSubmit={handleBookAppointment} className="space-y-4">
             <div className="w-full">
-               <label className="block text-sm font-medium text-slate-700 mb-1.5 pb-1">Select Patient</label>
-               <div className="relative">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search size={16} className="text-slate-400" />
-                 </div>
-                 <input type="text" className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500" placeholder="Search by name or ID..." />
-               </div>
+               <label className="block text-sm font-medium text-slate-700 mb-1.5 pb-1">Patient ID (MongoDB ID)</label>
+               <Input placeholder="Enter patient ID..." value={appointmentData.patientId} onChange={(e) => setAppointmentData({...appointmentData, patientId: e.target.value})} required />
             </div>
 
             <div className="w-full">
                <label className="block text-sm font-medium text-slate-700 mb-1.5 pb-1">Select Doctor</label>
-               <select className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500">
-                  <option>Dr. Sarah Smith (General)</option>
-                  <option>Dr. John Doe (Cardiologist)</option>
+               <select 
+                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+                 value={appointmentData.doctorId}
+                 onChange={(e) => setAppointmentData({...appointmentData, doctorId: e.target.value})}
+                 required
+               >
+                  <option value="">Choose a doctor</option>
+                  {doctors.map(doc => (
+                    <option key={doc._id} value={doc._id}>{doc.name}</option>
+                  ))}
                </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-               <Input label="Date" type="date" />
-               <Input label="Time" type="time" />
+               <Input label="Date" type="date" value={appointmentData.date} onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})} required />
+               <Input label="Time" type="time" value={appointmentData.time} onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})} required />
             </div>
 
-            <div className="w-full">
-               <label className="block text-sm font-medium text-slate-700 mb-1.5 pb-1">Visit Type</label>
-               <select className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500">
-                  <option>General Checkup</option>
-                  <option>Follow-up</option>
-                  <option>Specialist Consultation</option>
-                  <option>Lab Results Review</option>
-               </select>
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-10">
+               <Button variant="ghost" type="button" onClick={() => setBookAptOpen(false)}>Cancel</Button>
+               <Button variant="primary" type="submit">Confirm Booking</Button>
             </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-4">
-               <Button variant="ghost" onClick={() => setBookAptOpen(false)}>Cancel</Button>
-               <Button variant="primary">Confirm Booking</Button>
-            </div>
-         </div>
+         </form>
       </Modal>
     </div>
   );

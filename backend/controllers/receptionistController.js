@@ -1,6 +1,7 @@
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
+const Receptionist = require('../models/Receptionist');
 
 // @desc    Register a new patient
 // @route   POST /api/receptionist/patients
@@ -179,11 +180,27 @@ const getDailySchedule = async (req, res) => {
   }
 };
 
+// @desc    Get receptionist profile
+// @route   GET /api/receptionist/profile
+// @access  Private/Receptionist
+const getReceptionistProfile = async (req, res) => {
+  try {
+    const receptionist = await Receptionist.findOne({ userId: req.user.id });
+    if (!receptionist) {
+        return res.status(404).json({ message: 'Receptionist profile not found' });
+    }
+    res.json(receptionist);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerPatient,
   updatePatientInfo,
   bookAppointment,
   updateAppointmentStatus,
   cancelAppointment,
-  getDailySchedule
+  getDailySchedule,
+  getReceptionistProfile
 };

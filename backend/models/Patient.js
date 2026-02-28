@@ -21,12 +21,26 @@ const patientSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true // Link to User model for Login
+    required: true
+  },
+  address: {
+    type: String
+  },
+  insuranceStatus: {
+    type: String,
+    enum: ['Active', 'None', 'Pending'],
+    default: 'None'
+  },
+  bloodGroup: {
+    type: String
+  },
+  emergencyContact: {
+    type: String
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Usually the receptionist who registered them
-    required: true
+    ref: 'User',
+    required: false // Optional if self-registered
   },
   createdAt: {
     type: Date,

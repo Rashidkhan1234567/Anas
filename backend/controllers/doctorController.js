@@ -2,6 +2,7 @@ const Appointment = require('../models/Appointment');
 const Patient = require('../models/Patient');
 const DiagnosisLog = require('../models/DiagnosisLog');
 const Prescription = require('../models/Prescription');
+const Doctor = require('../models/Doctor');
 
 // @desc    Get all assigned appointments for the doctor
 // @route   GET /api/doctor/appointments
@@ -97,9 +98,25 @@ const createPrescription = async (req, res) => {
   }
 };
 
+// @desc    Get doctor profile
+// @route   GET /api/doctor/profile
+// @access  Private/Doctor
+const getDoctorProfile = async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ userId: req.user.id });
+    if (!doctor) {
+        return res.status(404).json({ message: 'Doctor profile not found' });
+    }
+    res.json(doctor);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAssignedAppointments,
   getPatientHistoryTimeline,
   addDiagnosis,
-  createPrescription
+  createPrescription,
+  getDoctorProfile
 };

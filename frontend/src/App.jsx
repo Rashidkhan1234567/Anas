@@ -8,12 +8,24 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { ReceptionistDashboard } from './pages/ReceptionistDashboard';
 import { PatientDashboard } from './pages/PatientDashboard';
-import { 
-  AdminDoctorsPage, AdminReceptionistsPage, AdminActivityPage, AdminSettingsPage,
-  DoctorPatientsPage, DoctorAIAssistPage, DoctorPrescriptionsPage, DoctorAnalyticsPage,
-  ReceptionistPatientsPage, ReceptionistBillingPage,
-  PatientAppointmentsPage, PatientPrescriptionsPage
-} from './pages/shared/Placeholders';
+import { AdminDoctorsPage } from './pages/admin/AdminDoctorsPage';
+import { AdminReceptionistsPage } from './pages/admin/AdminReceptionistsPage';
+import { AdminActivityPage } from './pages/admin/AdminActivityPage';
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
+
+import { DoctorPatientsPage } from './pages/doctor/DoctorPatientsPage';
+import { DoctorAIAssistPage } from './pages/doctor/DoctorAIAssistPage';
+import { DoctorPrescriptionsPage } from './pages/doctor/DoctorPrescriptionsPage';
+import { DoctorAnalyticsPage } from './pages/doctor/DoctorAnalyticsPage';
+
+import { ReceptionistPatientsPage } from './pages/receptionist/ReceptionistPatientsPage';
+import { ReceptionistBillingPage } from './pages/receptionist/ReceptionistBillingPage';
+
+import { PatientAppointmentsPage } from './pages/patient/PatientAppointmentsPage';
+import { PatientPrescriptionsPage } from './pages/patient/PatientPrescriptionsPage';
+
+import { UserProfilePage } from './pages/shared/UserProfilePage';
+import { UserNotificationsPage } from './pages/shared/UserNotificationsPage';
 
 function App() {
   return (
@@ -35,6 +47,8 @@ function App() {
           <Route path="receptionists" element={<AdminReceptionistsPage />} />
           <Route path="activity" element={<AdminActivityPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="notifications" element={<UserNotificationsPage />} />
         </Route>
         
         {/* Doctor Routes */}
@@ -44,6 +58,8 @@ function App() {
           <Route path="ai-assist" element={<DoctorAIAssistPage />} />
           <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
           <Route path="analytics" element={<DoctorAnalyticsPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="notifications" element={<UserNotificationsPage />} />
         </Route>
         
         {/* Receptionist Routes */}
@@ -51,6 +67,8 @@ function App() {
           <Route index element={<ReceptionistDashboard />} />
           <Route path="patients" element={<ReceptionistPatientsPage />} />
           <Route path="billing" element={<ReceptionistBillingPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="notifications" element={<UserNotificationsPage />} />
         </Route>
         
         {/* Patient Routes */}
@@ -58,6 +76,8 @@ function App() {
           <Route index element={<PatientDashboard />} />
           <Route path="appointments" element={<PatientAppointmentsPage />} />
           <Route path="prescriptions" element={<PatientPrescriptionsPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="notifications" element={<UserNotificationsPage />} />
         </Route>
       </Routes>
     </Router>

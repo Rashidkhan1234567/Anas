@@ -4,13 +4,17 @@ const {
   getAssignedAppointments, 
   getPatientHistoryTimeline, 
   addDiagnosis, 
-  createPrescription 
+  createPrescription,
+  getDoctorProfile
 } = require('../controllers/doctorController');
 const { protect } = require('../middlewares/authMiddleware');
 const { roleCheck } = require('../middlewares/roleMiddleware');
 
 router.use(protect);
 router.use(roleCheck('Doctor'));
+
+// View profile
+router.get('/profile', getDoctorProfile);
 
 // View assigned appointments
 router.get('/appointments', getAssignedAppointments);

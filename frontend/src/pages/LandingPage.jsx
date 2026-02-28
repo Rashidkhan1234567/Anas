@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Activity, Calendar, FileText, BrainCircuit, ActivitySquare, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
@@ -10,6 +10,21 @@ gsap.registerPlugin(ScrollTrigger);
 
 export function LandingPage() {
   const stepsRef = useRef(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [location]);
 
   useEffect(() => {
     // GSAP Scroll Animation for "How It Works"

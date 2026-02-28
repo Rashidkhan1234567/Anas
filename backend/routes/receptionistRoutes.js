@@ -6,7 +6,8 @@ const {
   bookAppointment,
   updateAppointmentStatus,
   cancelAppointment,
-  getDailySchedule
+  getDailySchedule,
+  getReceptionistProfile
 } = require('../controllers/receptionistController');
 const { protect } = require('../middlewares/authMiddleware');
 const { roleCheck } = require('../middlewares/roleMiddleware');
@@ -22,6 +23,9 @@ router.put('/patients/:id', updatePatientInfo);
 router.post('/appointments', bookAppointment);
 router.put('/appointments/:id/status', updateAppointmentStatus);
 router.delete('/appointments/:id', cancelAppointment);
+
+// View profile
+router.get('/profile', getReceptionistProfile);
 
 // Schedule viewing
 router.get('/schedule', getDailySchedule);

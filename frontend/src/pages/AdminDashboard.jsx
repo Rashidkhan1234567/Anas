@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
@@ -7,32 +8,57 @@ import {
 } from 'recharts';
 import { Users, UserPlus, Calendar as CalendarIcon, DollarSign, BrainCircuit } from 'lucide-react';
 
-const appointmentData = [
-  { name: 'Mon', appointments: 45 },
-  { name: 'Tue', appointments: 52 },
-  { name: 'Wed', appointments: 38 },
-  { name: 'Thu', appointments: 65 },
-  { name: 'Fri', appointments: 48 },
-  { name: 'Sat', appointments: 25 },
-  { name: 'Sun', appointments: 10 },
-];
-
-const diagnosisData = [
-  { name: 'Viral Fever', value: 400 },
-  { name: 'Hypertension', value: 300 },
-  { name: 'Diabetes', value: 300 },
-  { name: 'Asthma', value: 200 },
-];
-const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'];
-
-const recentActivity = [
-  { id: 1, user: 'Dr. Sarah Smith', action: 'Added prescription for Patient #1024', time: '10 mins ago', status: 'success' },
-  { id: 2, user: 'System AI', action: 'Flagged abnormal lab results for review', time: '1 hour ago', status: 'warning' },
-  { id: 3, user: 'John (Reception)', action: 'Cancelled appointment #849', time: '2 hours ago', status: 'info' },
-  { id: 4, user: 'Admin', action: 'Updated billing configuration', time: '5 hours ago', status: 'default' },
-];
-
 export function AdminDashboard() {
+  const [stats, setStats] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        const [statsRes, activityRes] = await Promise.all([
+          fetch('http://localhost:5000/api/admin/analytics', { headers }),
+          fetch('http://localhost:5000/api/activity', { headers })
+        ]);
+
+        const statsData = await statsRes.json();
+        const activityData = await activityRes.json();
+
+        if (statsRes.ok) setStats(statsData);
+        if (activityRes.ok) setActivity(activityData.slice(0, 5));
+
+      } catch (error) {
+        console.error('Error fetching admin data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const appointmentData = [
+    { name: 'Mon', appointments: 12 },
+    { name: 'Tue', appointments: 18 },
+    { name: 'Wed', appointments: 15 },
+    { name: 'Thu', appointments: 22 },
+    { name: 'Fri', appointments: 19 },
+    { name: 'Sat', appointments: 8 },
+    { name: 'Sun', appointments: 3 },
+  ];
+
+  const diagnosisData = [
+    { name: 'General', value: stats?.monthlyAppointments || 0 },
+    { name: 'AI Assisted', value: stats?.systemUsage?.aiUsageLogs || 0 },
+    { name: 'Prescriptions', value: stats?.systemUsage?.totalPrescriptions || 0 },
+  ];
+  const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'];
+
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading admin overview...</div>;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
@@ -44,10 +70,10 @@ export function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="Total Patients" value="12,450" trend="+12%" trendUp />
-        <StatCard icon={UserPlus} label="Total Doctors" value="24" trend="+2" trendUp />
-        <StatCard icon={CalendarIcon} label="Monthly Appointments" value="1,840" trend="+5%" trendUp />
-        <StatCard icon={DollarSign} label="Monthly Revenue" value="$42,500" trend="-2%" trendUp={false} />
+        <StatCard icon={Users} label="Total Patients" value={stats?.totalPatients || '0'} trend="+5%" trendUp />
+        <StatCard icon={UserPlus} label="Total Doctors" value={stats?.totalDoctors || '0'} trend="+1" trendUp />
+        <StatCard icon={CalendarIcon} label="Monthly Appointments" value={stats?.monthlyAppointments || '0'} trend="+8%" trendUp />
+        <StatCard icon={DollarSign} label="Monthly Revenue" value={`$${stats?.simulatedRevenue || '0'}`} trend="+12%" trendUp />
       </div>
 
       {/* Charts Section */}
@@ -68,8 +94,8 @@ export function AdminDashboard() {
         </Card>
 
         <Card className="col-span-1 shadow-sm border border-slate-100 flex flex-col">
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Common AI Diagnosis</h3>
-          <p className="text-xs text-slate-500 mb-4">Top conditions processed by Smart AI</p>
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">System Utilization</h3>
+          <p className="text-xs text-slate-500 mb-4">Breakdown of system activities this month</p>
           <div className="flex-1 min-h-[250px] w-full relative -mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -102,24 +128,28 @@ export function AdminDashboard() {
 
       {/* Activity Table */}
       <Card className="shadow-sm border border-slate-100 !p-0 overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
           <h3 className="text-lg font-semibold text-slate-800">Recent System Activity</h3>
-          <a href="#" className="text-sm font-medium text-green-600 hover:text-green-700">View all</a>
+          <a href="/admin/activity" className="text-sm font-medium text-green-600 hover:text-green-700">View all</a>
         </div>
-        <Table headers={['User / System', 'Action Performed', 'Time', 'Status']}>
-          {recentActivity.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-medium text-slate-900">{item.user}</TableCell>
-              <TableCell>{item.action}</TableCell>
-              <TableCell className="text-slate-500">{item.time}</TableCell>
-              <TableCell>
-                <Badge variant={item.status}>
-                  {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                </Badge>
-              </TableCell>
-            </TableRow>
-          ))}
-        </Table>
+        {activity.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">No recent activity logs.</div>
+        ) : (
+          <Table headers={['User', 'Action', 'Time', 'Type']}>
+            {activity.map((item) => (
+              <TableRow key={item._id}>
+                <TableCell className="font-medium text-slate-900">{item.user?.name || 'System'}</TableCell>
+                <TableCell>{item.action}</TableCell>
+                <TableCell className="text-slate-500">{new Date(item.createdAt).toLocaleTimeString()}</TableCell>
+                <TableCell>
+                  <Badge variant={item.type === 'Info' ? 'info' : item.type === 'Success' ? 'success' : 'warning'}>
+                    {item.type}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </Table>
+        )}
       </Card>
     </div>
   );

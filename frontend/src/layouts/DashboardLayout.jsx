@@ -136,21 +136,21 @@ export function DashboardLayout({ role = 'admin' }) {
           </div>
           
           <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors relative">
+            <Link to="notifications" className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors relative">
               <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white" />
               <Bell className="h-5 w-5" />
-            </button>
+            </Link>
             
-            {/* Profile Dropdown */}
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-200 cursor-pointer">
+            {/* Profile */}
+            <Link to="profile" className="flex items-center gap-3 pl-4 border-l border-slate-200 cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors">
               <div className="w-8 h-8 rounded-full bg-green-100 border border-green-200 flex items-center justify-center text-green-700 font-bold text-sm">
                 JD
               </div>
               <div className="hidden md:block text-sm">
                 <p className="font-medium text-slate-700 leading-none">John Doe</p>
-                <p className="text-slate-500 text-xs mt-1 leading-none">{role}</p>
+                <p className="text-slate-500 text-xs mt-1 leading-none capitalize">{role}</p>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
