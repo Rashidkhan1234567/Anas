@@ -29,7 +29,7 @@ export function ReceptionistDashboard() {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/receptionist/profile', {
+      const response = await fetch('https://anas-ebon.vercel.app/api/receptionist/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -42,7 +42,7 @@ export function ReceptionistDashboard() {
   const fetchSchedule = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/receptionist/schedule', {
+      const response = await fetch('https://anas-ebon.vercel.app/api/receptionist/schedule', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -57,7 +57,7 @@ export function ReceptionistDashboard() {
   const fetchDoctors = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/users?role=Doctor', {
+      const response = await fetch('https://anas-ebon.vercel.app/api/admin/users?role=Doctor', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -71,7 +71,7 @@ export function ReceptionistDashboard() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/receptionist/patients', {
+      const response = await fetch('https://anas-ebon.vercel.app/api/receptionist/patients', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ export function ReceptionistDashboard() {
       // Combine date and time
       const dateTime = new Date(`${appointmentData.date}T${appointmentData.time}`);
       
-      const response = await fetch('http://localhost:5000/api/receptionist/appointments', {
+      const response = await fetch('https://anas-ebon.vercel.app/api/receptionist/appointments', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

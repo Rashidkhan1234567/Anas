@@ -10,7 +10,7 @@ export function UserNotificationsPage() {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/notifications', {
+        const response = await fetch('https://anas-ebon.vercel.app/api/notifications', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -32,7 +32,7 @@ export function UserNotificationsPage() {
   const handleMarkAllRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await fetch('http://localhost:5000/api/notifications/read-all', {
+      await fetch('https://anas-ebon.vercel.app/api/notifications/read-all', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`

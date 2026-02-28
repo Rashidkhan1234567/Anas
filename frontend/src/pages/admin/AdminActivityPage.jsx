@@ -13,7 +13,7 @@ export function AdminActivityPage() {
     const fetchLogs = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/activity', {
+        const response = await fetch('https://anas-ebon.vercel.app/api/activity', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

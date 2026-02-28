@@ -20,8 +20,8 @@ export function AdminDashboard() {
         const headers = { 'Authorization': `Bearer ${token}` };
 
         const [statsRes, activityRes] = await Promise.all([
-          fetch('http://localhost:5000/api/admin/analytics', { headers }),
-          fetch('http://localhost:5000/api/activity', { headers })
+          fetch('https://anas-ebon.vercel.app/api/admin/analytics', { headers }),
+          fetch('https://anas-ebon.vercel.app/api/activity', { headers })
         ]);
 
         const statsData = await statsRes.json();

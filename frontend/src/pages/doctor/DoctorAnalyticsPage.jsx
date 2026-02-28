@@ -11,7 +11,7 @@ export function DoctorAnalyticsPage() {
     const fetchAnalytics = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/doctor-analytics', {
+        const response = await fetch('https://anas-ebon.vercel.app/api/doctor-analytics', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

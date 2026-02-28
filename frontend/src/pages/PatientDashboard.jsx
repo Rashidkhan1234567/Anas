@@ -23,9 +23,9 @@ export function PatientDashboard() {
         const headers = { 'Authorization': `Bearer ${token}` };
 
         const [profileRes, appointmentsRes, prescriptionsRes] = await Promise.all([
-          fetch('http://localhost:5000/api/patient/profile', { headers }),
-          fetch('http://localhost:5000/api/patient/appointments', { headers }),
-          fetch('http://localhost:5000/api/patient/prescriptions', { headers })
+          fetch('https://anas-ebon.vercel.app/api/patient/profile', { headers }),
+          fetch('https://anas-ebon.vercel.app/api/patient/appointments', { headers }),
+          fetch('https://anas-ebon.vercel.app/api/patient/prescriptions', { headers })
         ]);
 
         const profileData = await profileRes.json();
@@ -49,7 +49,7 @@ export function PatientDashboard() {
   const handleDownloadRx = async (rxId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/patient/prescriptions/${rxId}/download`, {
+      const response = await fetch(`https://anas-ebon.vercel.app/api/patient/prescriptions/${rxId}/download`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

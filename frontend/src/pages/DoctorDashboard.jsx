@@ -27,8 +27,8 @@ export function DoctorDashboard() {
         const headers = { 'Authorization': `Bearer ${token}` };
 
         const [appointmentsRes, profileRes] = await Promise.all([
-          fetch('http://localhost:5000/api/doctor/appointments', { headers }),
-          fetch('http://localhost:5000/api/doctor/profile', { headers })
+          fetch('https://anas-ebon.vercel.app/api/doctor/appointments', { headers }),
+          fetch('https://anas-ebon.vercel.app/api/doctor/profile', { headers })
         ]);
 
         const appointmentsData = await appointmentsRes.json();

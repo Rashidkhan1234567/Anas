@@ -16,7 +16,7 @@ export function ReceptionistBillingPage() {
   const fetchInvoices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/billing', {
+      const response = await fetch('https://anas-ebon.vercel.app/api/billing', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -35,7 +35,7 @@ export function ReceptionistBillingPage() {
   const handleCollectPayment = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/billing/${id}/pay`, {
+      const response = await fetch(`https://anas-ebon.vercel.app/api/billing/${id}/pay`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
