@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 
 export function PatientDashboard() {
+  const navigate = useNavigate();
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -79,7 +81,7 @@ export function PatientDashboard() {
           <h1 className="text-2xl font-bold text-slate-800">My Health Portal</h1>
           <p className="text-sm text-slate-500 mt-1">Manage your appointments, records, and prescriptions.</p>
         </div>
-        <Button variant="primary" className="flex items-center gap-2">
+        <Button variant="primary" onClick={() => navigate('/dashboard/appointments')} className="flex items-center gap-2">
            <CalendarIcon size={18} /> Book New Appointment
         </Button>
       </div>

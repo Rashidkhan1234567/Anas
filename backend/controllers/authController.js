@@ -133,7 +133,85 @@ const loginUser = async (req, res) => {
   }
 };
 
+// @desc    Get current user profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getMyProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    let profile;
+    if (user.role === 'Patient') {
+      profile = await Patient.findOne({ userId: user._id });
+    } else if (user.role === 'Doctor') {
+      profile = await Doctor.findOne({ userId: user._id });
+    } else if (user.role === 'Receptionist') {
+      profile = await Receptionist.findOne({ userId: user._id });
+    }
+
+    res.json({
+      user,
+      profile
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { name, email, profileData } = req.body;
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    await user.save();
+
+    let profile;
+    if (user.role === 'Patient') {
+      profile = await Patient.findOneAndUpdate(
+        { userId: user._id },
+        { ...profileData, name: name || user.name },
+        { new: true }
+      );
+    } else if (user.role === 'Doctor') {
+      profile = await Doctor.findOneAndUpdate(
+        { userId: user._id },
+        { ...profileData, name: name || user.name },
+        { new: true }
+      );
+    } else if (user.role === 'Receptionist') {
+      profile = await Receptionist.findOneAndUpdate(
+        { userId: user._id },
+        { ...profileData, name: name || user.name },
+        { new: true }
+      );
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      profile
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  getMyProfile,
+  updateUserProfile,
 };

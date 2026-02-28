@@ -107,13 +107,17 @@ export function DashboardLayout({ role = 'admin' }) {
           </div>
 
           <div className="p-4 border-t border-slate-100">
-            <Link
-              to="/login"
-              className="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            <button
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userInfo');
+                window.location.href = '/login';
+              }}
+              className="w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
             >
               <LogOut className="mr-3 h-5 w-5 text-red-500" />
               Sign out
-            </Link>
+            </button>
           </div>
         </div>
       </motion.aside>
@@ -144,10 +148,10 @@ export function DashboardLayout({ role = 'admin' }) {
             {/* Profile */}
             <Link to="profile" className="flex items-center gap-3 pl-4 border-l border-slate-200 cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors">
               <div className="w-8 h-8 rounded-full bg-green-100 border border-green-200 flex items-center justify-center text-green-700 font-bold text-sm">
-                JD
+                {JSON.parse(localStorage.getItem('userInfo') || '{}').name?.split(' ').map(n => n[0]).join('') || 'U'}
               </div>
               <div className="hidden md:block text-sm">
-                <p className="font-medium text-slate-700 leading-none">John Doe</p>
+                <p className="font-medium text-slate-700 leading-none">{JSON.parse(localStorage.getItem('userInfo') || '{}').name || 'User'}</p>
                 <p className="text-slate-500 text-xs mt-1 leading-none capitalize">{role}</p>
               </div>
             </Link>

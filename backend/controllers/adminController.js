@@ -29,7 +29,7 @@ const getUsersByRole = async (req, res) => {
 // @access  Private/Admin
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, profileData } = req.body;
     
     // Only allow creating Doctors or Receptionists through this endpoint
     if (!['Doctor', 'Receptionist'].includes(role)) {
@@ -42,6 +42,29 @@ const createUser = async (req, res) => {
     }
 
     const user = await User.create({ name, email, password, role });
+    
+    // Create role-specific profile
+    if (role === 'Doctor') {
+      const Doctor = require('../models/Doctor');
+      await Doctor.create({
+        userId: user._id,
+        name: name,
+        specialization: profileData?.specialization || 'General',
+        experience: profileData?.experience || 0,
+        consultationFee: profileData?.consultationFee || 0,
+        contact: profileData?.contact || 'N/A',
+        gender: profileData?.gender || 'Other'
+      });
+    } else if (role === 'Receptionist') {
+      const Receptionist = require('../models/Receptionist');
+      await Receptionist.create({
+        userId: user._id,
+        name: name,
+        contact: profileData?.contact || 'N/A',
+        employeeId: profileData?.employeeId || `EMP-${Date.now()}`
+      });
+    }
+
     res.status(201).json({ _id: user.id, name: user.name, email: user.email, role: user.role });
   } catch (error) {
     res.status(500).json({ message: error.message });

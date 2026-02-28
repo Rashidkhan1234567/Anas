@@ -130,7 +130,7 @@ export function AdminDashboard() {
       <Card className="shadow-sm border border-slate-100 !p-0 overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
           <h3 className="text-lg font-semibold text-slate-800">Recent System Activity</h3>
-          <a href="/admin/activity" className="text-sm font-medium text-green-600 hover:text-green-700">View all</a>
+          <a href="/dashboard/activity" className="text-sm font-medium text-green-600 hover:text-green-700">View all</a>
         </div>
         {activity.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-sm">No recent activity logs.</div>
@@ -138,7 +138,7 @@ export function AdminDashboard() {
           <Table headers={['User', 'Action', 'Time', 'Type']}>
             {activity.map((item) => (
               <TableRow key={item._id}>
-                <TableCell className="font-medium text-slate-900">{item.user?.name || 'System'}</TableCell>
+                <TableCell className="font-medium text-slate-900">{item.user || 'System'}</TableCell>
                 <TableCell>{item.action}</TableCell>
                 <TableCell className="text-slate-500">{new Date(item.createdAt).toLocaleTimeString()}</TableCell>
                 <TableCell>

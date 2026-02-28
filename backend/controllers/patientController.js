@@ -145,10 +145,66 @@ const downloadPrescriptionPDF = async (req, res) => {
   }
 };
 
+// @desc    Book a new appointment
+// @route   POST /api/patient/appointments
+// @access  Private/Patient
+const bookAppointment = async (req, res) => {
+  try {
+    const { doctorId, date } = req.body;
+    
+    const patient = await Patient.findOne({ userId: req.user.id });
+    if (!patient) {
+        return res.status(404).json({ message: 'Patient profile not found' });
+    }
+
+    const appointment = await Appointment.create({
+      patientId: patient._id,
+      doctorId,
+      date,
+      status: 'pending'
+    });
+
+    res.status(201).json(appointment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all available doctors
+// @route   GET /api/patient/doctors
+// @access  Private/Patient
+const getAvailableDoctors = async (req, res) => {
+  try {
+    // We want to return list of doctors including their specialization
+    const doctors = await User.find({ role: 'Doctor' }).select('name email');
+    
+    // Fetch specializations from Doctor profile model
+    const Doctor = require('../models/Doctor');
+    const doctorProfiles = await Doctor.find({});
+    
+    const combinedData = doctors.map(doc => {
+      const profile = doctorProfiles.find(p => p.userId.toString() === doc._id.toString());
+      return {
+        _id: doc._id,
+        name: doc.name,
+        specialization: profile ? profile.specialization : 'General Physician',
+        experience: profile ? profile.experience : 'N/A',
+        consultationFee: profile ? profile.consultationFee : 'N/A'
+      };
+    });
+
+    res.json(combinedData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getPatientProfile,
   updatePatientProfile,
   getAppointmentHistory,
   getPrescriptions,
-  downloadPrescriptionPDF
+  downloadPrescriptionPDF,
+  bookAppointment,
+  getAvailableDoctors
 };
